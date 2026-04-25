@@ -7,92 +7,24 @@
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f5f5f5;
-      padding: 16px;
-      color: #222;
-    }
-
-    .card {
-      background: #fff;
-      border-radius: 16px;
-      padding: 18px;
-      max-width: 520px;
-      margin: auto;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-    }
-
-    h2 {
-      margin-top: 0;
-      color: #0b1f3a;
-    }
-
-    label {
-      font-weight: bold;
-      display: block;
-      margin-top: 14px;
-    }
-
-    input, select {
-      width: 100%;
-      padding: 11px;
-      margin-top: 6px;
-      border: 1px solid #ccc;
-      border-radius: 10px;
-      box-sizing: border-box;
-      font-size: 15px;
-    }
-
-    .term {
-      display: flex;
-      gap: 8px;
-      align-items: flex-start;
-      margin-top: 16px;
-      font-size: 14px;
-    }
-
-    .term input {
-      width: auto;
-      margin-top: 2px;
-    }
-
-    button {
-      width: 100%;
-      margin-top: 20px;
-      padding: 14px;
-      border: none;
-      border-radius: 12px;
-      background: #0b1f3a;
-      color: #fff;
-      font-size: 16px;
-      font-weight: bold;
-    }
-
-    button:disabled {
-      background: #999;
-    }
-
-    .note {
-      font-size: 13px;
-      color: #666;
-      margin-top: 10px;
-      line-height: 1.5;
-    }
-
-    .hidden {
-      display: none;
-    }
+    body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 16px; color: #222; }
+    .card { background: #fff; border-radius: 16px; padding: 18px; max-width: 520px; margin: auto; box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+    h2 { margin-top: 0; color: #0b1f3a; }
+    label { font-weight: bold; display: block; margin-top: 14px; }
+    input, select { width: 100%; padding: 11px; margin-top: 6px; border: 1px solid #ccc; border-radius: 10px; box-sizing: border-box; font-size: 15px; }
+    .term { display: flex; gap: 8px; align-items: flex-start; margin-top: 16px; font-size: 14px; }
+    .term input { width: auto; margin-top: 2px; }
+    button { width: 100%; margin-top: 20px; padding: 14px; border: none; border-radius: 12px; background: #0b1f3a; color: #fff; font-size: 16px; font-weight: bold; cursor: pointer; }
+    button:disabled { background: #999; cursor: not-allowed; }
+    .note { font-size: 13px; color: #666; margin-top: 10px; line-height: 1.5; }
+    .hidden { display: none; }
   </style>
 </head>
 
 <body>
   <div class="card">
     <h2>แจ้งชำระเงิน ฝ่ายขายรถ อัศวยนต์</h2>
-
-    <p class="note">
-      กรุณากรอกข้อมูลให้ครบถ้วน และแนบสลิปโอนเงิน
-    </p>
+    <p class="note">กรุณากรอกข้อมูลให้ครบถ้วน และแนบสลิปโอนเงิน</p>
 
     <form id="paymentForm">
       <label>ชื่อ-นามสกุล *</label>
@@ -113,7 +45,6 @@
         <option>กระแต</option>
         <option>อื่น ๆ</option>
       </select>
-
       <div id="salesOtherBox" class="hidden">
         <label>ระบุชื่อเซลส์</label>
         <input type="text" id="salesOther">
@@ -126,7 +57,6 @@
         <option>ชำระค่ารถ</option>
         <option>อื่น ๆ</option>
       </select>
-
       <div id="paymentOtherBox" class="hidden">
         <label>รายละเอียดอื่น ๆ</label>
         <input type="text" id="paymentOther">
@@ -146,23 +76,21 @@
         <span>ข้าพเจ้ายอมรับว่า บริษัทรับชำระผ่านบัญชีที่ได้รับจาก LINE นี้เท่านั้น</span>
       </div>
 
-      <button type="submit" id="submitBtn">ส่งข้อมูล</button>
+      <button type="submit" id="submitBtn" disabled>กำลังเชื่อมต่อ LINE...</button>
     </form>
 
-    <p id="status" class="note">กำลังเชื่อมต่อ LINE...</p>
+    <p id="status" class="note"></p>
   </div>
 
 <script>
 const LIFF_ID = '2009893679-DEKuCh93';
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzjnIHsqj7RcfI2-Ko1LycqR2IlpCnp5WfTaFMK-1e_DTnRT5JUkfdzTbW2_0qbIFTe/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzjnIHsqj7RcfI2-Ko1LycqR2IlpCnp5WfTaFMK-1e_DTnRT5JUkfdzTbW2_0qbIFTe/exec';
 
-let lineProfile = {
-  displayName: '',
-  userId: ''
-};
+let lineProfile = { displayName: '', userId: '' };
 
 async function initLiff() {
-  const status = document.getElementById('status');
+  const status    = document.getElementById('status');
+  const submitBtn = document.getElementById('submitBtn');
 
   try {
     await liff.init({ liffId: LIFF_ID });
@@ -172,32 +100,36 @@ async function initLiff() {
       return;
     }
 
-    const decoded = liff.getDecodedIDToken();
+    // ใช้ getProfile() แทน getDecodedIDToken()
+    // เพราะไม่ต้องการ scope openid เพิ่มเติม
+    const profile = await liff.getProfile();
+    lineProfile.displayName = profile.displayName || '';
+    lineProfile.userId      = profile.userId      || '';
 
-    lineProfile.displayName = decoded?.name || '';
-    lineProfile.userId = decoded?.sub || '';
-
-    status.innerText = 'เชื่อมต่อ LINE แล้ว: ' + lineProfile.displayName;
+    submitBtn.disabled  = false;
+    submitBtn.innerText = 'ส่งข้อมูล';
+    status.innerText    = 'เชื่อมต่อ LINE แล้ว: ' + lineProfile.displayName;
 
   } catch (err) {
-    status.innerText = 'ดึง LINE Profile ไม่สำเร็จ: ' + err.message;
+    // LIFF ล้มเหลว — เปิดให้กดส่งได้ แต่ไม่มี LINE info
+    submitBtn.disabled  = false;
+    submitBtn.innerText = 'ส่งข้อมูล';
+    status.innerText    = '⚠️ ดึง LINE Profile ไม่สำเร็จ: ' + err.message;
   }
 }
 
 function toggleSalesOther() {
-  const value = document.getElementById('salesName').value;
-  document.getElementById('salesOtherBox').classList.toggle('hidden', value !== 'อื่น ๆ');
+  document.getElementById('salesOtherBox').classList.toggle('hidden',
+    document.getElementById('salesName').value !== 'อื่น ๆ');
 }
-
 function togglePaymentOther() {
-  const value = document.getElementById('paymentType').value;
-  document.getElementById('paymentOtherBox').classList.toggle('hidden', value !== 'อื่น ๆ');
+  document.getElementById('paymentOtherBox').classList.toggle('hidden',
+    document.getElementById('paymentType').value !== 'อื่น ๆ');
 }
-
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
+    reader.onload  = () => resolve(reader.result);
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
@@ -205,55 +137,58 @@ function fileToBase64(file) {
 
 document.getElementById('paymentForm').addEventListener('submit', async function(e) {
   e.preventDefault();
-
   const submitBtn = document.getElementById('submitBtn');
-  const status = document.getElementById('status');
-  const slipFile = document.getElementById('slip').files[0];
+  const status    = document.getElementById('status');
+  const slipFile  = document.getElementById('slip').files[0];
 
-  submitBtn.disabled = true;
+  submitBtn.disabled  = true;
   submitBtn.innerText = 'กำลังส่งข้อมูล...';
+  status.innerText    = '';
 
   try {
     const slipBase64 = await fileToBase64(slipFile);
 
     const payload = {
-      lineDisplayName: lineProfile.displayName,
-      lineUserId: lineProfile.userId,
-      fullName: document.getElementById('fullName').value.trim(),
-      phone: document.getElementById('phone').value.trim(),
-      carInfo: document.getElementById('carInfo').value.trim(),
-      salesName: document.getElementById('salesName').value,
-      salesOther: document.getElementById('salesOther').value.trim(),
-      paymentType: document.getElementById('paymentType').value,
-      paymentOther: document.getElementById('paymentOther').value.trim(),
-      amount: document.getElementById('amount').value,
-      transferDate: document.getElementById('transferDate').value,
-      acceptTerm: document.getElementById('acceptTerm').checked,
-      slipFileName: slipFile.name,
-      slipMimeType: slipFile.type,
-      slipBase64: slipBase64
+      lineDisplayName : lineProfile.displayName,
+      lineUserId      : lineProfile.userId,
+      fullName        : document.getElementById('fullName').value.trim(),
+      phone           : document.getElementById('phone').value.trim(),
+      carInfo         : document.getElementById('carInfo').value.trim(),
+      salesName       : document.getElementById('salesName').value,
+      salesOther      : document.getElementById('salesOther').value.trim(),
+      paymentType     : document.getElementById('paymentType').value,
+      paymentOther    : document.getElementById('paymentOther').value.trim(),
+      amount          : document.getElementById('amount').value,
+      transferDate    : document.getElementById('transferDate').value,
+      acceptTerm      : document.getElementById('acceptTerm').checked,
+      slipFileName    : slipFile.name,
+      slipMimeType    : slipFile.type,
+      slipBase64      : slipBase64
     };
 
-    await fetch(GOOGLE_SCRIPT_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: {
-        'Content-Type': 'text/plain;charset=utf-8'
-      },
-      body: JSON.stringify(payload)
+    // ใช้ mode: 'cors' แทน 'no-cors' เพื่ออ่าน response ได้
+    // GAS ต้องมี doPost และ return ContentService พร้อม CORS header
+    const res = await fetch(GAS_URL, {
+      method  : 'POST',
+      headers : { 'Content-Type': 'text/plain;charset=utf-8' },
+      body    : JSON.stringify(payload)
     });
 
-    status.innerText = 'ส่งข้อมูลเรียบร้อยแล้ว';
+    const result = await res.json();
+
+    if (!result.success) throw new Error(result.error || 'GAS error');
+
+    status.innerText = 'ส่งข้อมูลเรียบร้อยแล้ว บริษัทจะตรวจสอบและยืนยันยอดชำระให้ค่ะ';
     document.getElementById('paymentForm').reset();
 
     setTimeout(() => {
-      if (liff.isInClient()) liff.closeWindow();
-    }, 1500);
+      if (typeof liff !== 'undefined' && liff.isInClient()) liff.closeWindow();
+    }, 1800);
 
   } catch (err) {
     status.innerText = 'ส่งข้อมูลไม่สำเร็จ: ' + err.message;
   } finally {
-    submitBtn.disabled = false;
+    submitBtn.disabled  = false;
     submitBtn.innerText = 'ส่งข้อมูล';
   }
 });
